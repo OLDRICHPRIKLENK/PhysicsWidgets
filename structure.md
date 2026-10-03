@@ -37,7 +37,24 @@ There is a sidebar, and the sidebar shows the exact hierarchical structure of  A
             stub.html #stub here for now
 
 And so on. When a new directory or a new file is created, the sidebar is dynamically updated, mirroring the structure. 
+We can use Vite's import.meta.glob feature. This will scan your directory at build time. Every time you add a file and run the build command to push to GitHub pages, Vite will automatically see the new files and update the sidebar navigation tree.
+
+We want to use React Router so that the URLs are shareable? (e.g., if someone wants to share a specific widget, the URL would look like [yourwebsite.com/#/Geometries/cyllinder](https://yourwebsite.com/#/Geometries/cyllinder)). Note: Hash routing (/#/...) is highly recommended for GitHub Pages to prevent 404 errors on reload.
+it routes the user to a completely separate "Viewer" page? (= the hero image remains truly static widget, only with cyllinders.html)
+
+Render these widgets using <iframe> elements? An iframe acts as a safe, isolated window. This ensures the widget's pure HTML/JS runs perfectly without conflicting with your React app's Tailwind styles or React state.
+
+
 
 The website is in a spatial (cosmic) atmosphere, hyberlucid and geometrical appearance. We are in the hilbert space, when visiting this website!
+Use Glassmorphism (semi-transparent frosted glass panels over a deep cosmic background) for the sidebar and containers?
+Question: Do you have a preferred color palette? (e.g., deep void blacks/purples for the background, with neon cyan/magenta for geometrical accents?)
+
 
 Create it in Vite, React, Tailwind. The widgets will be added in pure html artifacts, so account for that (html+javascript, of course).
+
+
+
+5. GitHub Pages Base URL (Minor configuration detail)
+for vite.config.js:
+https://[OLDRICHPRIKLENK].github.io/[PhysicsWidgets]
