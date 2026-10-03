@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Nothing to show here!</title>
+  <meta name="description" content="The theoretical depth in the field is not fine enough to present results. Come later!">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #0c0c0d;
+      font-family: "EB Garamond", Georgia, "Times New Roman", serif;
+      color: #dcd8cf;
+    }
+    #canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: crosshair;
+    }
+    /* 1930s Monograph Formal Notice Card */
+    .notice-card {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #121215;
+      border: 1px solid #2e2e36;
+      padding: 24px 28px;
+      max-width: 460px;
+      width: 90%;
+      text-align: center;
+      z-index: 10;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.6);
+    }
+    .badge {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 10px;
+      color: #8c897f;
+      text-transform: uppercase;
+      letter-spacing: 0.12em;
+      margin-bottom: 8px;
+      display: block;
+    }
+    .notice-card h1 {
+      font-size: 22px;
+      font-weight: 400;
+      color: #f0eee6;
+      letter-spacing: 0.04em;
+      margin-bottom: 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid #2e2e36;
+    }
+    .notice-text {
+      font-size: 14px;
+      line-height: 1.6;
+      color: #b3afa5;
+      font-style: italic;
+      margin-bottom: 16px;
+    }
+    .formula-plate {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 11px;
+      background: #0c0c0d;
+      padding: 8px 12px;
+      border: 1px solid #26262c;
+      color: #dcd8cf;
+      border-left: 2px solid #b89b4f;
+      text-align: left;
+      line-height: 1.5;
+    }
+    .formula-plate .status {
+      color: #8c897f;
+      font-size: 10px;
+      display: block;
+      margin-top: 4px;
+    }
+    /* Bottom parameter status / note */
+    .status-bar {
+      position: absolute;
+      bottom: 14px;
+      right: 14px;
+      background: #121215;
+      border: 1px solid #2e2e36;
+      padding: 8px 14px;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 11px;
+      color: #8c897f;
+      z-index: 10;
+    }
+    .status-bar span {
+      color: #dcd8cf;
+    }
+
+    /* Mobile Narrow Screen Strict Vertical Alignment */
+    @media (max-width: 640px) {
+      body {
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        overflow-x: hidden;
+        min-height: 100%;
+        height: auto;
+      }
+      #canvas-container {
+        order: 1;
+        position: relative;
+        width: 100%;
+        height: 240px;
+        min-height: 200px;
+        flex-shrink: 0;
+      }
+      .notice-card {
+        order: 2;
+        position: relative;
+        top: auto;
+        left: auto;
+        transform: none;
+        width: 100%;
+        max-width: 100%;
+        border-left: 0;
+        border-right: 0;
+        border-top: 1px solid #2e2e36;
+        border-bottom: 1px solid #2e2e36;
+        padding: 16px 18px;
+        box-shadow: none;
+        flex-shrink: 0;
+      }
+      .status-bar {
+        order: 3;
+        position: relative;
+        bottom: auto;
+        right: auto;
+        width: 100%;
+        border: 0;
+        border-bottom: 1px solid #2e2e36;
+        padding: 10px 14px;
+        flex-shrink: 0;
+        text-align: center;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <canvas id="stubCanvas"></canvas>
+  </div>
+
+  <div class="notice-card">
+    <span class="badge">Relativity • Theoretical Inquiry</span>
+    <h1>Nothing to show here!</h1>
+    <p class="notice-text">
+      The theoretical depth in the field is not fine enough to present results. Come later!
+    </p>
+  </div>
+  <div class="status-bar">
+  </div>
+
+  <script>
+    (function () {
+      const canvas = document.getElementById('stubCanvas');
+      const ctx = canvas.getContext('2d');
+      let width, height, dpr;
+      let mouseX = -1, mouseY = -1;
+      let t = 0;
+
+      function resize() {
+        dpr = window.devicePixelRatio || 1;
+        width = canvas.clientWidth;
+        height = canvas.clientHeight;
+        canvas.width = width * dpr;
+        canvas.height = height * dpr;
+        ctx.scale(dpr, dpr);
+      }
+      window.addEventListener('resize', resize);
+      resize();
+
+      canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        mouseX = e.clientX - rect.left;
+        mouseY = e.clientY - rect.top;
+      });
+
+      canvas.addEventListener('touchmove', (e) => {
+        if (e.touches.length > 0) {
+          const rect = canvas.getBoundingClientRect();
+          mouseX = e.touches[0].clientX - rect.left;
+          mouseY = e.touches[0].clientY - rect.top;
+        }
+      }, { passive: true });
+
+      function render() {
+        t += 0.015;
+        ctx.fillStyle = '#0c0c0d';
+        ctx.fillRect(0, 0, width, height);
+
+        const cx = width / 2;
+        const cy = height / 2;
+
+        // 1930s Drafting Grid
+        ctx.strokeStyle = '#18181b';
+        ctx.lineWidth = 1;
+        const step = 36;
+        for (let x = 0; x < width; x += step) {
+          ctx.beginPath();
+          ctx.moveTo(x, 0);
+          ctx.lineTo(x, height);
+          ctx.stroke();
+        }
+        for (let y = 0; y < height; y += step) {
+          ctx.beginPath();
+          ctx.moveTo(0, y);
+          ctx.lineTo(width, y);
+          ctx.stroke();
+        }
+
+        // Unresolved Dashed Geodesic Manifold
+        ctx.save();
+        ctx.setLineDash([4, 6]);
+        ctx.strokeStyle = 'rgba(184, 155, 79, 0.35)'; // Muted archival brass
+        ctx.lineWidth = 1.0;
+
+        for (let r = 50; r <= 320; r += 45) {
+          ctx.beginPath();
+          const wobble = Math.sin(t + r * 0.05) * 3;
+          ctx.arc(cx, cy, r + wobble, 0, Math.PI * 2);
+          ctx.stroke();
+        }
+
+        // Dashed Null Coordinate Axes
+        ctx.strokeStyle = 'rgba(220, 216, 207, 0.2)';
+        ctx.beginPath();
+        ctx.moveTo(cx - 300, cy - 300);
+        ctx.lineTo(cx + 300, cy + 300);
+        ctx.moveTo(cx - 300, cy + 300);
+        ctx.lineTo(cx + 300, cy - 300);
+        ctx.stroke();
+        ctx.restore();
+
+        // Interactive Drafting Crosshair Reticle
+        if (mouseX >= 0 && mouseY >= 0) {
+          ctx.strokeStyle = 'rgba(184, 155, 79, 0.45)';
+          ctx.lineWidth = 0.8;
+          ctx.beginPath();
+          ctx.moveTo(mouseX, 0);
+          ctx.lineTo(mouseX, height);
+          ctx.moveTo(0, mouseY);
+          ctx.lineTo(width, mouseY);
+          ctx.stroke();
+
+          ctx.fillStyle = 'rgba(184, 155, 79, 0.7)';
+          ctx.font = '10px "IBM Plex Mono", monospace';
+          ctx.fillText(`(x: ${Math.round(mouseX)}, y: ${Math.round(mouseY)})`, mouseX + 6, mouseY - 6);
+        }
+
+        requestAnimationFrame(render);
+      }
+
+      requestAnimationFrame(render);
+    })();
+  </script>
+</body>
+</html>

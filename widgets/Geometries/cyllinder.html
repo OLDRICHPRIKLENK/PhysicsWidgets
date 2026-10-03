@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Interactive Quaternion Superquadrics</title>
+  <meta name="description" content="Analytical quaternion superquadrics isosurface manifold in ℝ³ with tunable radius, height, and exponent.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <!-- Load Plotly.js directly from CDN -->
+  <script src="https://cdn.plot.ly/plotly-2.27.0.min.js"></script>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #0c0c0d;
+      font-family: "EB Garamond", Georgia, "Times New Roman", serif;
+      color: #dcd8cf;
+      display: flex;
+      flex-direction: column;
+    }
+    /* 1930s Academic Apparatus Control Header */
+    .controls {
+      background: #121215;
+      border-bottom: 1px solid #2e2e36;
+      padding: 10px 16px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 24px;
+      z-index: 10;
+      flex-shrink: 0;
+    }
+    .apparatus-title {
+      font-size: 13px;
+      font-weight: 500;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: #f0eee6;
+      display: flex;
+      align-items: baseline;
+      gap: 6px;
+    }
+    .apparatus-title span {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 10px;
+      color: #8c897f;
+    }
+    .control-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      color: #aba79c;
+      font-size: 12px;
+    }
+    .control-item label {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .val {
+      color: #e5e2d8;
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 11px;
+      min-width: 26px;
+    }
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 90px;
+      background: #26262c;
+      height: 2px;
+      outline: none;
+      vertical-align: middle;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 10px;
+      height: 10px;
+      border-radius: 0;
+      background: #dcd8cf;
+      cursor: pointer;
+      border: 1px solid #0c0c0d;
+    }
+    /* 3D WebGL Plot Viewport */
+    #plot {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      min-height: 280px;
+      background: #0c0c0d;
+    }
+    /* Mobile Narrow Screen Strict Vertical Alignment */
+    @media (max-width: 640px) {
+      body {
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        overflow-x: hidden;
+        min-height: 100%;
+        height: auto;
+      }
+      #plot {
+        order: 1;
+        width: 100%;
+        height: 320px;
+        min-height: 280px;
+        flex-shrink: 0;
+      }
+      .controls {
+        order: 2;
+        border-top: 1px solid #2e2e36;
+        border-bottom: 0;
+        flex-direction: column;
+        align-items: stretch;
+        gap: 10px;
+        padding: 12px 14px;
+        flex-shrink: 0;
+      }
+      .control-item {
+        justify-content: space-between;
+      }
+      input[type=range] {
+        width: 140px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <!-- Tunable Parameters Bar (Desktop top / Mobile vertically bottom) -->
+  <div class="controls">
+    <div class="apparatus-title">
+      Superquadrics <span>[PLATE 1.1]</span>
+    </div>
+    <div class="control-item">
+      <label>
+        Radius (r):
+        <input type="range" id="r_slider" min="0.5" max="2.0" step="0.1" value="1.0">
+        <span class="val" id="r_val">1.0</span>
+      </label>
+    </div>
+    <div class="control-item">
+      <label>
+        Height (h):
+        <input type="range" id="h_slider" min="0.5" max="6.0" step="0.1" value="2.0">
+        <span class="val" id="h_val">2.0</span>
+      </label>
+    </div>
+    <div class="control-item">
+      <label>
+        Exponent (P):
+        <input type="range" id="p_slider" min="1" max="8" step="1" value="1">
+        <span class="val" id="p_val">1</span>
+      </label>
+    </div>
+  </div>
+
+  <!-- The 3D Canvas / Plotly Viewport -->
+  <div id="plot"></div>
+
+  <script>
+    // 1. Geometry Setup
+    const max_h = 6.0;
+    const a = 2 * Math.sqrt(2);
+    const resolution = 70;
+
+    const centers = [
+      [0, a],
+      [0, 0],
+      [a, a],
+      [a, 0]
+    ];
+
+    function linspace(start, end, num) {
+      const arr = [];
+      const step = (end - start) / (num - 1);
+      for (let i = 0; i < num; i++) {
+        arr.push(start + (step * i));
+      }
+      return arr;
+    }
+
+    const x_range = linspace(-2.0, a + 2.0, resolution);
+    const y_range = linspace(-2.0, a + 2.0, resolution);
+    const z_range = linspace(-1.0, max_h + 1.0, resolution);
+
+    let x_vals = [], y_vals = [], z_vals = [];
+    for (let x of x_range) {
+      for (let y of y_range) {
+        for (let z of z_range) {
+          x_vals.push(x);
+          y_vals.push(y);
+          z_vals.push(z);
+        }
+      }
+    }
+
+    // 2. The Math Function
+    function calculateValues(r, P, h) {
+      let values = new Float32Array(x_vals.length);
+      let h_half = Math.max(h / 2, 0.001);
+      let h_half_sq = Math.pow(h_half, 2);
+
+      for (let i = 0; i < x_vals.length; i++) {
+        let x = x_vals[i];
+        let y = y_vals[i];
+        let z = z_vals[i];
+
+        let H_term = Math.pow(z - h_half, 2) / h_half_sq;
+        let F_Unified = 1.0;
+
+        for (let c of centers) {
+          let R_term = (Math.pow(x - c[0], 2) + Math.pow(y - c[1], 2)) / Math.pow(r, 2);
+          let F_cylinder = Math.pow(R_term, P) + Math.pow(H_term, P) - 1.0;
+          F_Unified *= F_cylinder;
+        }
+
+        values[i] = F_Unified;
+      }
+      return values;
+    }
+
+    // 3. Rendering Logic
+    function drawPlot(r, P, h) {
+      const values = calculateValues(r, P, h);
+
+      const data = [{
+        type: 'isosurface',
+        x: x_vals,
+        y: y_vals,
+        z: z_vals,
+        value: values,
+        isomin: 0.0,
+        isomax: 0.0,
+        surface: { show: true, count: 1, fill: 1 },
+        colorscale: [[0, '#00e5ff'], [1, '#00e5ff']],
+        showscale: false,
+        flatshading: false,
+        caps: { x: { show: false }, y: { show: false }, z: { show: false } },
+        lighting: { ambient: 0.55, diffuse: 0.9, roughness: 0.25, specular: 0.4 }
+      }];
+
+      const layout = {
+        paper_bgcolor: '#0c0c0d',
+        plot_bgcolor: '#0c0c0d',
+        font: { family: '"IBM Plex Mono", monospace', size: 10, color: '#aba79c' },
+        margin: { t: 20, l: 0, r: 0, b: 0 },
+        scene: {
+          aspectmode: 'data',
+          xaxis: {
+            title: 'Real Axis (X)',
+            gridcolor: '#1f1f24',
+            zerolinecolor: '#2e2e36',
+            showbackground: true,
+            backgroundcolor: '#0e0e11',
+            color: '#8c897f'
+          },
+          yaxis: {
+            title: 'i Axis (Y)',
+            gridcolor: '#1f1f24',
+            zerolinecolor: '#2e2e36',
+            showbackground: true,
+            backgroundcolor: '#0e0e11',
+            color: '#8c897f'
+          },
+          zaxis: {
+            title: 'j Axis (Z)',
+            gridcolor: '#1f1f24',
+            zerolinecolor: '#2e2e36',
+            showbackground: true,
+            backgroundcolor: '#0e0e11',
+            color: '#8c897f'
+          },
+          camera: {
+            eye: { x: 1.6, y: 1.6, z: 1.2 }
+          }
+        }
+      };
+
+      const config = {
+        responsive: true,
+        displayModeBar: false
+      };
+
+      Plotly.react('plot', data, layout, config);
+    }
+
+    // 4. Initialization matched to HTML slider values
+    let current_r = 1.0;
+    let current_h = 2.0;
+    let current_p = 1;
+
+    drawPlot(current_r, current_p, current_h);
+
+    window.addEventListener('resize', () => {
+      Plotly.Plots.resize('plot');
+    });
+
+    // Event Listeners (immediate feedback on value, redraw on change)
+    document.getElementById('r_slider').addEventListener('input', (e) => {
+      document.getElementById('r_val').textContent = parseFloat(e.target.value).toFixed(1);
+    });
+    document.getElementById('r_slider').addEventListener('change', (e) => {
+      current_r = parseFloat(e.target.value);
+      drawPlot(current_r, current_p, current_h);
+    });
+
+    document.getElementById('h_slider').addEventListener('input', (e) => {
+      document.getElementById('h_val').textContent = parseFloat(e.target.value).toFixed(1);
+    });
+    document.getElementById('h_slider').addEventListener('change', (e) => {
+      current_h = parseFloat(e.target.value);
+      drawPlot(current_r, current_p, current_h);
+    });
+
+    document.getElementById('p_slider').addEventListener('input', (e) => {
+      document.getElementById('p_val').textContent = parseInt(e.target.value);
+    });
+    document.getElementById('p_slider').addEventListener('change', (e) => {
+      current_p = parseInt(e.target.value);
+      drawPlot(current_r, current_p, current_h);
+    });
+  </script>
+</body>
+</html>

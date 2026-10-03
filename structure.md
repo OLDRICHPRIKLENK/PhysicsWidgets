@@ -58,3 +58,10 @@ Create it in Vite, React, Tailwind. The widgets will be added in pure html artif
 5. GitHub Pages Base URL (Minor configuration detail)
 for vite.config.js:
 https://[OLDRICHPRIKLENK].github.io/[PhysicsWidgets]
+
+
+Create a YAML file (usually placed in .github/workflows/deploy.yml in your repository) that automates the entire process. Here is how that workflow operates conceptually:
+Listens for changes: It triggers automatically every time you push code or new .html widgets to your main branch.
+Sets up the environment: It spins up a temporary server and installs Node.js.
+Builds the site: It runs the installation and build commands. This is the crucial step where Vite executes the import.meta.glob feature, scans your /src directory for new widgets, and dynamically generates the updated sidebar routing.
+Deploys: It bundles the final static site into a /dist folder and publishes it directly to your GitHub Pages URL.

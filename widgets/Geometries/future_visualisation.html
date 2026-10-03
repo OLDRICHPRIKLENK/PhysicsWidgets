@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>4D Tesseract Projection</title>
+  <meta name="description" content="Technical schematic of a 4-dimensional hypercube projected onto Euclidean 3-space with dual-plane orthogonal rotations.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=EB+Garamond:ital,wght@0,400;0,500;1,400&family=IBM+Plex+Mono:wght@300;400&display=swap" rel="stylesheet">
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+    body, html {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background-color: #0c0c0d;
+      font-family: "EB Garamond", Georgia, "Times New Roman", serif;
+      color: #dcd8cf;
+    }
+    #canvas-container {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+    }
+    canvas {
+      width: 100%;
+      height: 100%;
+      display: block;
+      cursor: grab;
+    }
+    canvas:active {
+      cursor: grabbing;
+    }
+    .hud {
+      position: absolute;
+      top: 14px;
+      left: 14px;
+      background: #121215;
+      border: 1px solid #2e2e36;
+      padding: 14px 16px;
+      max-width: 310px;
+    }
+    .hud h2 {
+      font-size: 14px;
+      font-weight: 500;
+      color: #f0eee6;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+    .hud p {
+      font-size: 12px;
+      color: #9c998e;
+      line-height: 1.4;
+      margin-bottom: 8px;
+      font-style: italic;
+    }
+    .badge {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 10px;
+      color: #8c897f;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 4px;
+      display: block;
+    }
+    .formula {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 11px;
+      background: #0c0c0d;
+      padding: 6px 10px;
+      border: 1px solid #26262c;
+      color: #dcd8cf;
+      border-left: 2px solid #b89b4f;
+    }
+    .controls {
+      position: absolute;
+      bottom: 14px;
+      right: 14px;
+      background: #121215;
+      border: 1px solid #2e2e36;
+      padding: 12px 14px;
+      font-size: 12px;
+      color: #aba79c;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      width: 230px;
+    }
+    .controls label {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+    }
+    .controls span.val {
+      font-family: "IBM Plex Mono", monospace;
+      font-size: 11px;
+      color: #e5e2d8;
+    }
+    input[type=range] {
+      -webkit-appearance: none;
+      width: 100%;
+      background: #26262c;
+      height: 2px;
+      margin-top: 4px;
+    }
+    input[type=range]::-webkit-slider-thumb {
+      -webkit-appearance: none;
+      width: 10px;
+      height: 10px;
+      background: #dcd8cf;
+      cursor: pointer;
+    }
+    /* Mobile Narrow Screen Strict Vertical Alignment */
+    @media (max-width: 640px) {
+      body {
+        display: flex;
+        flex-direction: column;
+        overflow-y: auto;
+        overflow-x: hidden;
+        min-height: 100%;
+        height: auto;
+      }
+      #canvas-container {
+        order: 1;
+        position: relative;
+        width: 100%;
+        height: 250px;
+        min-height: 220px;
+        flex-shrink: 0;
+      }
+      .hud {
+        order: 2;
+        position: relative;
+        top: auto;
+        left: auto;
+        width: 100%;
+        max-width: 100%;
+        border-left: 0;
+        border-right: 0;
+        border-top: 1px solid #2e2e36;
+        border-bottom: 1px solid #2e2e36;
+        font-size: 11px;
+        padding: 10px 14px;
+        flex-shrink: 0;
+      }
+      .controls {
+        order: 3;
+        position: relative;
+        bottom: auto;
+        right: auto;
+        width: 100%;
+        border: 0;
+        border-bottom: 1px solid #2e2e36;
+        flex-shrink: 0;
+        padding: 12px 14px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="canvas-container">
+    <canvas id="tesseractCanvas"></canvas>
+  </div>
+
+  <div class="hud">
+    <span class="badge">Geometries • Apparatus IV</span>
+    <h2>4D Hypercube (Tesseract)</h2>
+    <p>Stereographic projection of 4-space rotation along orthogonal planes XW and YZ.</p>
+    <div class="formula">
+      SO(4) ≅ (SU(2) × SU(2)) / ℤ₂<br>
+      16 Vertices • 32 Edges • 8 Cells
+    </div>
+  </div>
+
+  <div class="controls">
+    <label>
+      Rot Speed: <span class="val" id="speedVal">1.0x</span>
+    </label>
+    <input type="range" id="speedInput" min="0.1" max="2.5" step="0.1" value="1.0">
+
+    <label style="margin-top: 4px;">
+      4D Depth (d₄): <span class="val" id="distVal">2.4</span>
+    </label>
+    <input type="range" id="distInput" min="1.6" max="3.8" step="0.1" value="2.4">
+  </div>
+
+  <script>
+    const canvas = document.getElementById('tesseractCanvas');
+    const ctx = canvas.getContext('2d');
+    let width, height, dpr;
+    let angleXW = 0;
+    let angleYZ = 0;
+    let speed = 1.0;
+    let dist4D = 2.4;
+    let isDragging = false;
+    let lastX = 0, lastY = 0;
+
+    document.getElementById('speedInput').addEventListener('input', (e) => {
+      speed = parseFloat(e.target.value);
+      document.getElementById('speedVal').textContent = speed.toFixed(1) + 'x';
+    });
+
+    document.getElementById('distInput').addEventListener('input', (e) => {
+      dist4D = parseFloat(e.target.value);
+      document.getElementById('distVal').textContent = dist4D.toFixed(1);
+    });
+
+    function resize() {
+      dpr = window.devicePixelRatio || 1;
+      width = canvas.clientWidth;
+      height = canvas.clientHeight;
+      canvas.width = width * dpr;
+      canvas.height = height * dpr;
+      ctx.scale(dpr, dpr);
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    canvas.addEventListener('mousedown', (e) => {
+      isDragging = true;
+      lastX = e.clientX;
+      lastY = e.clientY;
+    });
+    window.addEventListener('mouseup', () => isDragging = false);
+    window.addEventListener('mousemove', (e) => {
+      if (!isDragging) return;
+      angleXW += (e.clientX - lastX) * 0.008;
+      angleYZ += (e.clientY - lastY) * 0.008;
+      lastX = e.clientX;
+      lastY = e.clientY;
+    });
+
+    canvas.addEventListener('touchstart', (e) => {
+      if (e.touches.length === 1) {
+        isDragging = true;
+        lastX = e.touches[0].clientX;
+        lastY = e.touches[0].clientY;
+      }
+    }, { passive: true });
+    window.addEventListener('touchend', () => isDragging = false);
+    window.addEventListener('touchcancel', () => isDragging = false);
+    window.addEventListener('touchmove', (e) => {
+      if (!isDragging || e.touches.length !== 1) return;
+      angleXW += (e.touches[0].clientX - lastX) * 0.008;
+      angleYZ += (e.touches[0].clientY - lastY) * 0.008;
+      lastX = e.touches[0].clientX;
+      lastY = e.touches[0].clientY;
+    }, { passive: true });
+
+    const vertices4D = [];
+    for (let i = 0; i < 16; i++) {
+      vertices4D.push([
+        (i & 1) ? 1 : -1,
+        (i & 2) ? 1 : -1,
+        (i & 4) ? 1 : -1,
+        (i & 8) ? 1 : -1
+      ]);
+    }
+
+    const edges = [];
+    for (let i = 0; i < 16; i++) {
+      for (let j = i + 1; j < 16; j++) {
+        let diff = i ^ j;
+        if ((diff & (diff - 1)) === 0) {
+          edges.push([i, j]);
+        }
+      }
+    }
+
+    function render() {
+      if (!isDragging) {
+        angleXW += 0.009 * speed;
+        angleYZ += 0.006 * speed;
+      }
+
+      ctx.fillStyle = '#0c0c0d';
+      ctx.fillRect(0, 0, width, height);
+
+      // Coordinate Drafting Grid
+      ctx.strokeStyle = '#18181b';
+      ctx.lineWidth = 1;
+      const step = 40;
+      for (let x = 0; x < width; x += step) {
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      }
+      for (let y = 0; y < height; y += step) {
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+
+      const cosXW = Math.cos(angleXW), sinXW = Math.sin(angleXW);
+      const cosYZ = Math.cos(angleYZ), sinYZ = Math.sin(angleYZ);
+
+      const projected2D = vertices4D.map(v => {
+        let [x, y, z, w] = v;
+
+        let x1 = x * cosXW - w * sinXW;
+        let w1 = x * sinXW + w * cosXW;
+
+        let y1 = y * cosYZ - z * sinYZ;
+        let z1 = y * sinYZ + z * cosYZ;
+
+        const factor4D = 1 / (dist4D - w1);
+        const x3 = x1 * factor4D;
+        const y3 = y1 * factor4D;
+        const z3 = z1 * factor4D;
+
+        const cam = 3.2;
+        const scale = Math.min(width, height) * 0.7;
+        const factor3D = scale / (cam + z3);
+
+        return {
+          x: width / 2 + x3 * factor3D,
+          y: height / 2 - y3 * factor3D,
+          w: w1,
+          z: z3
+        };
+      });
+
+      // Edges (Technical drafting silver lines)
+      edges.forEach(([i, j]) => {
+        const p1 = projected2D[i];
+        const p2 = projected2D[j];
+
+        const avgW = (p1.w + p2.w) / 2;
+        const alpha = Math.min(1, Math.max(0.18, (avgW + 1.2) / 2.2));
+
+        ctx.beginPath();
+        ctx.strokeStyle = `rgba(216, 212, 200, ${alpha * 0.85})`;
+        ctx.lineWidth = 1.0;
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+      });
+
+      // Vertices (small monochrome nodes)
+      projected2D.forEach(p => {
+        const alpha = Math.min(1, Math.max(0.25, (p.w + 1.2) / 2.2));
+        ctx.beginPath();
+        ctx.fillStyle = `rgba(184, 155, 79, ${alpha})`; // Muted archival brass
+        ctx.arc(p.x, p.y, 2.5, 0, Math.PI * 2);
+        ctx.fill();
+      });
+
+      requestAnimationFrame(render);
+    }
+    requestAnimationFrame(render);
+  </script>
+</body>
+</html>
